@@ -1,96 +1,77 @@
-# A Framework for Analysis of LLMs in Debugging and Software Modification
+# Framework for evaluating real-world bug-fixing capabilities of LLMs
 
-This repository contains the source code and experimental data for a thesis project analyzing the effectiveness of Large Language Models (LLMs) in fixing real-world software bugs.
+A benchmarking framework designed to evaluate the capability of Large Language Models (specifically Google Gemini) to fix real-world software defects in Python repositories.
 
-The core of this project is a semi-automated Python tool that systematically benchmarks LLM performance against human-written solutions from popular open-source Python repositories.
+This project was developed as part of my BSc thesis at **Budapest University of Technology and Economics (BME VIK)**.
 
-**For a full, interactive project description and a detailed analysis of the results, please visit the official project website:**
+![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-WSL2-orange.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-**[https://engemkeres.github.io/llm-analysis-thesis/](https://engemkeres.github.io/llm-analysis-thesis/)**
+## Overview
 
+While LLMs excel at generating new code ("greenfield" development), repairing existing bugs in large, complex codebases ("brownfield" maintenance) remains an open challenge. This framework provides an automated pipeline to:
 
-### PS: The tools development, the data presentation and the thesis is still in progress.
----
+1.  **Mine** real bug-fix pairs from GitHub history.
+2.  **Construct** context-aware prompts using static analysis and Retrieval Augmented Generation (RAG).
+3.  **Generate** and apply patches using LLMs (Google Gemini 3 Pro Preview).
+4.  **Validate** fixes by reproducing historical environments and running the original test suites.
 
-## Thesis Objective
+## Requirements
 
-The primary research question is: **How do the bug-fixing capabilities of modern LLMs compare to those of human developers when applied to real-world software projects?**
+This tool is designed to run in a **Linux** environment (specifically in WSL2).
 
-To answer this, the tool implements the following methodology:
-1.  **Corpus Creation:** It mines GitHub repositories to build a quality dataset of bug-fix commits linked to their original issue reports.
-2.  **Context Extraction:** *in progress*
-3.  **Automated Test Harness:** It creates a fully isolated virtual environment for each bug, installs the project's exact dependencies, and applies the proposed code patch.
-4.  **Empirical Validation:** It runs the project's own comprehensive test suite against both the LLM's fix and the original human's fix, providing an objective measure of correctness.
-5.  **Metric Collection:** It gathers software engineering metrics (Cyclomatic Complexity, Cognitive Complexity, etc.) to assess the quality and maintainability of the generated solutions.
+*   **OS:** Windows 10/11 with WSL2 (Ubuntu 22.04/24.04 recommended).
+*   **Python:** Version 3.12+
+*   **System Dependencies:** `git`
 
-The final dataset, `results.csv`, is the foundation of the analysis.
+## Installation
 
-## Getting Started
-
-### Prerequisites
-
-- **WSL (Windows Subsystem for Linux):** The tool is designed and tested in a WSL/Ubuntu environment.
-- **Python:** Python 3.9+ is required.
-- **Git:** For cloning repositories.
-- **GitHub Personal Access Token:** Required for the corpus builder to interact with the GitHub API.
-
-### Installation
-
-1.  **Clone the repository:**
+1.  **Clone the repository (inside WSL):**
     ```bash
     git clone https://github.com/bmeaut/GenAiAutomationExperiments.git
-    cd GenAiAutomationExperiments/BugFixingAnalysis
+    cd BugFixingAnalysis
     ```
 
-2.  **Create and activate a virtual environment:**
+3.  **Set up the virtual environment:**
     ```bash
-    python3 -m venv .venv
+    # Create virtual environment
+    python -m venv .venv
     source .venv/bin/activate
-    ```
-
-3.  **Install dependencies:**
-    This project uses `pip-tools` for dependency management.
-    ```bash
+    
+    # Upgrade pip
+    pip install --upgrade pip
+    
+    # This project uses `pip-tools` for dependency management.
     pip install pip-tools
     pip-compile requirements.in
     pip install -r requirements.txt
     ```
 
-4.  **Set up your API Key:**
-    Create a `.env` file in the `BugFixingAnalysis` root directory.
-    ```    # .env
-    GITHUB_TOKEN="ghp_YourPersonalAccessTokenHere"
+## Configuration
+
+1.  **API Keys:**
+    Create a `.env` file in the `llm_bug_analysis` directory. You will need a GitHub token for corpus building and a Google API key for the LLM.
+    Fill in your keys:
+    ```ini
+    GITHUB_TOKEN=your_github_pat_here
+    GOOGLE_API_KEY=your_gemini_key_here
     ```
 
-## How to Use the Tool
-
-The application is controlled via a simple graphical user interface.
-
-1.  **Launch the GUI:**
-    ```bash
-    python llm_bug_analysis/main.py
+2.  **Target Repositories:**
+    Edit `config.json` or use the GUI to add or remove the GitHub repositories you wish to analyze.
+    ```json
+    {
+      "repositories": [
+        "https://github.com/pallets/flask",
+        "https://github.com/psf/requests"
+      ]
+    }
     ```
 
-2.  **Build a Bug Corpus:**
-    - Add one or more target repositories (e.g., `Textualize/rich`) in the GUI.
-    - Click the **"1. Build Bug Corpus"** button. The tool will scan the repositories and populate the "Bug Corpus" list with valid, issue-linked bug fixes.
+## Usage
 
-3.  **Run the Analysis:**
-    - **Full Run:** Click the **"2. Run Analysis Pipeline"** button to process the entire corpus.
-    - **Single Run:** Select a specific commit from the "Bug Corpus" list and click **"Run Selected"**.
-    - **Dry Run:** Check the "Skip LLM Fix" box to run the pipeline without the manual LLM step, which is useful for quickly validating a project's test setup.
+To launch the Graphical User Interface:
 
-4.  **Manual LLM Interaction (if not skipped): This is a placeholder until API or Agent integration is added.**
-    - The tool will create a `prompt_for_llm.txt` file in the project root.
-    - Copy the contents of this file into your preferred chatbot.
-    - Save the chatbot's complete response into a new file named `llm_response.txt` in the same directory.
-    - The tool will automatically detect the new file and continue the analysis.
-
-## Project Structure
-
--   `llm_bug_analysis/`: The main source code for the analysis tool.
-    -   `core/`: The backend logic (pipeline, project handler, etc.).
-    -   `gui/`: The Tkinter-based user interface.
--   `config.json`: Configuration for target repositories and test exclusions.
--   `results/`: The output directory for the final `results.csv` and detailed test failure logs.
--   `analysis.ipynb`: A Jupyter Notebook for analyzing the data from `results.csv`.
+```bash
+python -m llm_bug_analysis.main
