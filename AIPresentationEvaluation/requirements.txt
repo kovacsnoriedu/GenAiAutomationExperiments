@@ -1,0 +1,5 @@
+# Nincsenek külső függőségek – csak Python standard library szükséges.
+# Python 3.8 vagy újabb ajánlott.
+#
+# Felhasznált standard library modulok:
+#   csv, os, sys, argparse, statistics, datetime

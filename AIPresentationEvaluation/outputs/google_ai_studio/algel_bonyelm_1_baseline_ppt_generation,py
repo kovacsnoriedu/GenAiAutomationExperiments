@@ -1,0 +1,157 @@
+#Mivel közvetlen fájlküldés a chat felületén nem lehetséges, egy speciális Python szkriptet készítettem el, amely a megadott elvárásoknak megfelelően generálja a .pptx fájlt.
+# Először telepítsd a könyvtárat: pip install python-pptx
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+
+def create_presentation():
+    prs = Presentation()
+
+    # Segédfunkció a slide létrehozásához
+    def add_slide(title_text, bullet_points, definition=None, notes=None):
+        slide_layout = prs.slide_layouts[1] # Title and Content layout
+        slide = prs.slides.add_slide(slide_layout)
+        
+        # Cím beállítása
+        title = slide.shapes.title
+        title.text = title_text
+        
+        # Tartalom (Bullet pontok)
+        body_shape = slide.placeholders[1]
+        tf = body_shape.text_frame
+        tf.text = bullet_points[0] if bullet_points else ""
+        for bp in bullet_points[1:]:
+            p = tf.add_paragraph()
+            p.text = bp
+            p.level = 0
+
+        # Definíció kiemelése (ha van)
+        if definition:
+            left = Inches(0.5)
+            top = Inches(4.5)
+            width = Inches(9)
+            height = Inches(2)
+            txBox = slide.shapes.add_textbox(left, top, width, height)
+            tf_def = txBox.text_frame
+            p = tf_def.add_paragraph()
+            p.text = f"KÉPLET / DEFINÍCIÓ: {definition}"
+            p.font.bold = True
+            p.font.size = Pt(24)
+
+        # Előadói jegyzetek
+        if notes:
+            notes_slide = slide.notes_slide
+            text_frame = notes_slide.notes_text_frame
+            text_frame.text = notes
+
+    # --- SLIDE ADATOK ---
+    slides_data = [
+        ("Bevezetés a bonyolultságelméletbe", 
+         ["Hatékony algoritmus becslése", "Bemenet hossza (n) függvénye", "Eldöntési problémák"], 
+         "f(n) = O(n^k)", 
+         "Üdvözlöm! Ma a P és NP osztályok világába lépünk be. Fontos megérteni, hogy elméletileg a polinomiális időt tekintjük hatékonynak."),
+        
+        ("Eldöntési problémák", 
+         ["Válasz: Igen vagy Nem (1 bit)", "Bemenet: Szavak (nyelvek elemei)", "Kérdés: A bemenet tartozik-e a nyelvbe?"], 
+         "L = {x | a válasz igen x-re}", 
+         "Az eldöntési problémák egyszerűsítik az elméleti vizsgálatot. Példa: Egy szám prím?"),
+        
+        ("Példák eldöntési problémákra", 
+         ["PRÍM: m prím-e?", "H: Van Hamilton-kör?", "ÚT: Van-e út s és t között?"], 
+         "x ∈ X: Igen válasz", 
+         "Vegyük észre a különbséget: az ÚT egyszerű, a Hamilton-kör nehéz."),
+
+        ("A P osztály definíciója", 
+         ["Hatékonyan megoldható", "Polinomiális lépésszámú algoritmus", "Determinisztikus megoldás"], 
+         "P = {X | ∃A algoritmus, ami x-et O(|x|^k) időben eldönti}", 
+         "A P osztály a gyakorlatban jól kezelhető problémákat takarja. A PRÍM 2002 óta a P része!"),
+
+        ("A hatékony tanúsítvány", 
+         ["Megoldás megtalálása vs. ellenőrzése", "Tanúsítvány (t): Rövid bizonyíték", "Ellenőrző (T) algoritmus: Polinomiális"], 
+         "T(x, t) = igen", 
+         "Gondoljanak a Sudokura: megoldani nehéz, de ha valaki kitöltve adja oda, ellenőrizni gyors."),
+
+        ("Az NP osztály definíciója", 
+         ["N**on**-deterministic **P**olynomial time", "Hatékony tanúsítvány létezik", "Igen válasz esetén van rövid bizonyíték"], 
+         "NP = {X | ∃T polinomiális ellenőrző algoritmus}", 
+         "Az NP nem a 'nem polinomiális' rövidítése! A név a nemdeterminisztikus gépről ered."),
+
+        ("NP Példák", 
+         ["H: Csúcsok sorrendje (Hamilton-kör)", "ÖSSZETETT: Valódi osztó", "3SZÍN: Csúcsok színezése"], 
+         "|t| = O(|x|^c)", 
+         "Mindhárom esetben igaz: ha megadják a 'súgót', gyorsan ellenőrizhető."),
+
+        ("Keresés vs. Ellenőrzés", 
+         ["Keresési tér: Exponenciális (2^n)", "Ellenőrzés: Polinomiális", "A különbség a P=NP kérdés"], 
+         "2^n vs. poly(n)", 
+         "Ezért nem tudjuk egyelőre, hogy P=NP-e. Az ellenőrzés gyors, de a brute-force lassú."),
+
+        ("coNP osztály", 
+         ["Komplementer problémák", "A 'Nem' válasz ellenőrzhető", "Példa: ÖSSZETETT = PRÍM komplementere"], 
+         "coNP = {X | X' ∈ NP}", 
+         "Ha egy szám nem prím, van tanúsítványa. De vajon a 'nem' válaszra is van rövid bizonyíték?"),
+
+        ("P, NP és coNP kapcsolat", 
+         ["P ⊆ NP", "P ⊆ coNP", "P ⊆ NP ∩ coNP"], 
+         "P ⊆ NP ∩ coNP", 
+         "Ha a feladat P-ben van, akkor mind az 'igen', mind a 'nem' válasz könnyen indokolható."),
+
+        ("A P ?= NP kérdés", 
+         ["Legfontosabb nyitott kérdés", "Egyenértékű-e a keresés és az ellenőrzés?", "Clay Institute: 1 millió dolláros díj"], 
+         "Pstackrel? NP", 
+         "A legtöbb kutató szerint P ≠ NP, azaz a keresés nehezebb, mint az ellenőrzés."),
+
+        ("Karp-redukció", 
+         ["Problémák összehasonlítása", "X visszavezethető Y-re", "Polinomiális transzformáció (f)"], 
+         "X ≺ Y", 
+         "A redukció olyan, mint egy tolmács. Ha tudok magyarul (X), de angol a feladat (Y), kell egy fordító."),
+
+        ("Redukció tulajdonságai", 
+         ["Tranzitivitás", "Ha Y ∈ P és X ≺ Y, akkor X ∈ P", "Ha Y ∈ NP és X ≺ Y, akkor X ∈ NP"], 
+         "X ≺ Y ∧ Y ≺ Z ⇒ X ≺ Z", 
+         "Ez a kulcs: ha találunk egy nehéz NP-teljes problémát, erre minden más visszavezethető."),
+
+        ("NP-nehézség és NP-teljesség", 
+         ["NP-nehéz: Legalább olyan nehéz, mint az NP", "NP-teljes: Az NP 'legnehezebb' elemei", "NP-ben van + NP-nehéz"], 
+         "Z NP-teljes ha Z ∈ NP és ∀X ∈ NP: X ≺ Z", 
+         "Cook és Levin az 70-es évek elején bizonyították be az első ilyen problémát."),
+
+        ("NP-teljesség bizonyítási séma", 
+         ["1. Belátjuk, hogy Z ∈ NP", "2. Kiválasztunk egy ismert NP-teljes Y-t", "3. Megmutatjuk: Y ≺ Z"], 
+         "Y ≺ Z ∧ Z ∈ NP ⇒ Z NP-teljes", 
+         "Kiindulópontunk a 3SZÍN, amit bizonyítás nélkül fogadunk el."),
+
+        ("MAXFTL példa", 
+         ["Bemenet: (G, k)", "Kérdés: Van-e k darab független csúcs?", "NP-teljes eldöntési feladat"], 
+         "MAXFTL ∈ NP", 
+         "A tanúsítvány a k csúcs listája."),
+
+        ("MAXKLIKK és komplementer gráfok", 
+         ["Teljes részgráf keresése", "Kapcsolat a független ponthalmazhoz", "Komplementer gráf használata"], 
+         "(G, k) ∈ MAXFTL ⇔ (G', k) ∈ MAXKLIKK", 
+         "A MAXKLIKK is NP-teljes, mert a független halmaz probléma a komplementer gráfra nézve klikk probléma."),
+
+        ("További NP-teljes problémák", 
+         ["RÉSZGRÁFIZO (Iszomorfia)", "PARTÍCIÓ (Számok összesszege)", "HÁTIZSÁK (Knapsack)"], 
+         "EP ∈ NP-teljes", 
+         "Az NP-teljes feladatok a matematika minden területén megtalálhatóak."),
+
+        ("Összefoglaló", 
+         ["P = Hatékony megoldás", "NP = Hatékony ellenőrzés", "Redukció = Nehézség mérése", "P vs NP = A nagy kérdés"], 
+         "P ⊆ NP", 
+         "Gratulálok! Ez volt a bonyolultságelmélet alapja."),
+
+        ("Záró slide", 
+         ["Köszönöm a figyelmet!", "Kérdések?", "Kapcsolódó témák: P vs NP, Redukciók"], 
+         "", 
+         "Köszönöm a figyelmet!")
+    ]
+
+    for title, bullets, defn, note in slides_data:
+        add_slide(title, bullets, defn, note)
+
+    filename = "Bonyululzaselmelet_Alapjai.pptx"
+    prs.save(filename)
+    print(f"Sikeresen létrehozottam a fájlt: {filename}")
+
+create_presentation()
